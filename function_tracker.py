@@ -21,13 +21,15 @@ class FunctionTracker(object):
 		self.current_idx = -1
 		return self
 
-	def next(self):
+	def __next__(self):
 		self.current_idx += 1
 		if self.current_idx < len(self.func_names):
 			func_name = self.func_names[self.current_idx]
 			return (func_name, list(self.matrix[func_name]))
 		else:
 			raise StopIteration
+
+	next = __next__
 
 	def add(self, func_name, filename):
 		'''
@@ -78,13 +80,13 @@ class FunctionTracker(object):
 
 		return funcs_in_file
 
-	def get_duplicate_funclist(self):
+	def get_duplicate_funcs(self):
 		'''
 			returns a list of function that are defined in multiple different files
 			the list is sorted, functions defined in more files (higher duplicate count) appear first
 		'''
 
-		return sorted([x for x in self.matrix.keys() if len(self.matrix[x]) > 1], key=lambda x: len(self.matrix[x]))
+		return sorted([x for x in self.matrix.keys() if len(self.matrix[x]) > 1], key=lambda x: len(self.matrix[x]), reverse=True)
 
 	def get_num_duplicated(self, func_name):
 		'''

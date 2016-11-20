@@ -1,4 +1,4 @@
-import os, re
+import os, sys, re
 from function_tracker import FunctionTracker
 
 '''
@@ -24,7 +24,7 @@ from function_tracker import FunctionTracker
 '''
 
 def getFuncsList(file):
-    prototypes = []
+    funcs = []
     keywords = '(and|if|while)'
 
     for line in file:
@@ -52,27 +52,54 @@ def getFuncsList(file):
         '''
         match = re.match('\\s*[a-zA-Z0-9_*:]+\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)(?!\\s*;)', line)
         if match:
-            prototypes.append(match.group())
+            funcs.append(match.group().strip())
 
-    return prototypes
+    return funcs
+
+def get_file_list():
+    # find path and levels
+    if len(sys.argv) > 1 and sys.argv[1] == 'c':
+        with open('config.txt', 'r') as config_file:
+            path = config_file.readline().strip() # contains directory path
+            depth = config_file.readline() # contains depth to read into
+
+            if not depth.isdigit() or depth == '\n' or depth == '':
+                depth = 0
+            else:
+                depth = int(depth)
+    else:
+        path = os.getcwd()
+        depth = 0
+
+    path = os.path.normpath(path)
+
+    # get file list
+    res = []
+    for dirpath, dirnames, filenames in os.walk(path, topdown=True):
+        res += [os.path.join(dirpath, filename) for filename in filenames if filename.endswith('.cpp') or filename.endswith('.cc')]
+
+        current_depth = dirpath[len(path) + len(os.path.sep):].count(os.path.sep)
+        if current_depth >= depth:
+            dirnames[:] = [] # Don't recurse any deeper
+
+    return res
+    
 
 def main():
 
-    path = os.getcwd()+'/'
     ft = FunctionTracker()
 
     print
     
-    for filename in os.listdir(path):
-        # only check cpp and cc files
-        if not filename.endswith('.cpp') and not filename.endswith('.cc'):
-            continue
+    # parse functions from files
+    for filepath in get_file_list():
+        filename = filepath.split(os.path.sep)[-1]
 
         print 'Reading function signatures from: ' + filename
 
         # open file and get functions
-        with open(path+filename) as file:
-            funcs = getFuncsList(file)
+        with open(filepath) as f:
+            funcs = getFuncsList(f) 
             ft.add_file(funcs, filename)
 
         # print functions
@@ -81,24 +108,25 @@ def main():
 
         # message if none found
         if not len(funcs):
-            print '    ' + 'no function prototypes found'
+            print '    ' + 'no function definitions found'
 
         print
 
 
     # write results to file
-    dup_funcs = ft.get_duplicate_funclist() # sorted by most duplicate first
-    resFile = open('results.txt', 'w')
-    resFile.write('Total number of files read: ' + str(len(ft.get_files())) + '\n')
-    resFile.write('Total number of function definitions found: ' + str(len(ft.get_funcs())) + '\n')
-    resFile.write('Number of functions defined multiple times: ' + str(len(dup_funcs)) + '\n')
-    resFile.write('\n')
-    resFile.write('Below is a sorted list of functions defined multiple times.\n')
-    resFile.write('The ones with most duplicates appear first.\n')
-    resFile.write('\n')
+    dup_funcs = ft.get_duplicate_funcs() # sorted by most duplicate first
+    
+    with open('results.txt', 'w') as resFile:
+        resFile.write('Total number of files read: ' + str(len(ft.get_files())) + '\n')
+        resFile.write('Total number of function definitions found: ' + str(len(ft.get_funcs())) + '\n')
+        resFile.write('Number of functions defined multiple times: ' + str(len(dup_funcs)) + '\n')
+        resFile.write('\n')
+        resFile.write('Below is a sorted list of functions defined multiple times.\n')
+        resFile.write('The ones with most duplicates appear first.\n')
+        resFile.write('\n')
 
-    for func in dup_funcs:
-        resFile.write(func + '\t' + str(ft.get_num_duplicated(func)) + '\n')
+        for func in dup_funcs:
+            resFile.write(func + '\t' + str(ft.get_num_duplicated(func)) + '\n')
 
 
 if __name__ == '__main__':

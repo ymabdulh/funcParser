@@ -1,0 +1,10 @@
+This is an optional config file. Use this file to
+point the parser to your cpp project directory and 
+tell it how many directory levels to look. To use,
+delete this paragraph and fill in the information below,
+removing the the brackets. Do not include whitespace
+before the first line. Rename to config.txt, and run
+the main script with the argument 'c' from the terminal.
+
+[1st line: absolute path to project folder]
+[2nd line: how many directory levels to traverse while searching]
