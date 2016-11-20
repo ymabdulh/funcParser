@@ -39,7 +39,7 @@ def getFuncsList(file):
             REGEX                       DESCRIPTION                         EXAMPLE
             ------------------------------------------------------------------------
             \s*                         any number of spaces
-            [a-zA-Z0-9_*]+              return type                         int
+            [a-zA-Z0-9_*:]+             return type                         int
             \s+                         one or more spaces
             [a-zA-Z0-9_*:\s]*           function name                           * hello
             \(                          opening parenthesis                            (
@@ -48,9 +48,9 @@ def getFuncsList(file):
                 (=(?!=))?                   default arguments (but not ==)                    =
                 (-(?=>))?                   dereference ->                                      num->val
             )*                          one or more of group
-            \)                          close parenthesis                                               )
+            \)(?!\s*;)                  close parenthesis not followed by ;                             )
         '''
-        match = re.match('\\s*[a-zA-Z0-9_*]+\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)', line)
+        match = re.match('\\s*[a-zA-Z0-9_*:]+\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)(?!\\s*;)', line)
         if match:
             prototypes.append(match.group())
 
