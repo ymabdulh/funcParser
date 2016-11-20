@@ -1,4 +1,5 @@
 import os, re
+from function_tracker import FunctionTracker
 
 '''
     Script to detect function signatures from a *.cpp or *.cc file.
@@ -58,6 +59,7 @@ def getFuncsList(file):
 def main():
 
     path = os.getcwd()+'/'
+    ft = FunctionTracker()
 
     print
     
@@ -71,6 +73,7 @@ def main():
         # open file and get functions
         with open(path+filename) as file:
             funcs = getFuncsList(file)
+            ft.add_file(funcs, filename)
 
         # print functions
         for item in funcs:
@@ -81,6 +84,22 @@ def main():
             print '    ' + 'no function prototypes found'
 
         print
+
+
+    # write results to file
+    dup_funcs = ft.get_duplicate_funclist() # sorted by most duplicate first
+    resFile = open('results.txt', 'w')
+    resFile.write('Total number of files read: ' + str(len(ft.get_files())) + '\n')
+    resFile.write('Total number of function definitions found: ' + str(len(ft.get_funcs())) + '\n')
+    resFile.write('Number of functions defined multiple times: ' + str(len(dup_funcs)) + '\n')
+    resFile.write('\n')
+    resFile.write('Below is a sorted list of functions defined multiple times.\n')
+    resFile.write('The ones with most duplicates appear first.\n')
+    resFile.write('\n')
+
+    for func in dup_funcs:
+        resFile.write(func + '\t' + str(ft.get_num_duplicated(func)) + '\n')
+
 
 if __name__ == '__main__':
     main()
