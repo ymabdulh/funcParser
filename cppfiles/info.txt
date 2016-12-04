@@ -1,0 +1,1 @@
+Place cpp files here to use the script without a config file.

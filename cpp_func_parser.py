@@ -1,5 +1,6 @@
-import os, sys, re
-from function_tracker import FunctionTracker
+import os, sys
+from modules.function_tracker import FunctionTracker
+from modules.helpers import *
 
 '''
     Script to detect function signatures from a *.cpp or *.cc file.
@@ -23,94 +24,35 @@ from function_tracker import FunctionTracker
     and may mistakenly include non-functions. Read over the output to be sure.
 '''
 
-def getFuncsList(file):
-    funcs = []
-    keywords = '(and|if|while)'
-
-    for line in file:
-        # make sure we don't match if statements
-        match = re.match('\\s*'+keywords+'\\s*\\(', line)
-        if match:
-            continue
-
-        '''
-            search for the function signature
-
-            REGEX                       DESCRIPTION                         EXAMPLE
-            ------------------------------------------------------------------------
-            \s*                         any number of spaces
-            [a-zA-Z0-9_*:]+             return type                         int
-            \s+                         one or more spaces
-            [a-zA-Z0-9_*:\s]*           function name                           * hello
-            \(                          opening parenthesis                            (
-            (                           start of group
-                [a-zA-Z0-9_,.*\s]           function arguments                          int i
-                (=(?!=))?                   default arguments (but not ==)                    =
-                (-(?=>))?                   dereference ->                                      num->val
-            )*                          one or more of group
-            \)(?!\s*;)                  close parenthesis not followed by ;                             )
-        '''
-        match = re.match('\\s*[a-zA-Z0-9_*:]+\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)(?!\\s*;)', line)
-        if match:
-            funcs.append(match.group().strip())
-
-    return funcs
-
-def get_file_list():
-    # find path and levels
-    if len(sys.argv) > 1 and sys.argv[1] == 'c':
-        with open('config.txt', 'r') as config_file:
-            path = config_file.readline().strip() # contains directory path
-            depth = config_file.readline() # contains depth to read into
-
-            if not depth.isdigit() or depth == '\n' or depth == '':
-                depth = 0
-            else:
-                depth = int(depth)
-    else:
-        path = os.getcwd()
-        depth = 0
-
-    path = os.path.normpath(path)
-
-    # get file list
-    res = []
-    for dirpath, dirnames, filenames in os.walk(path, topdown=True):
-        res += [os.path.join(dirpath, filename) for filename in filenames if filename.endswith('.cpp') or filename.endswith('.cc')]
-
-        current_depth = dirpath[len(path) + len(os.path.sep):].count(os.path.sep)
-        if current_depth >= depth:
-            dirnames[:] = [] # Don't recurse any deeper
-
-    return res
-    
-
 def main():
 
+    options = get_args(sys.argv)
     ft = FunctionTracker()
-
-    print
     
     # parse functions from files
-    for filepath in get_file_list():
-        filename = filepath.split(os.path.sep)[-1]
+    for filepath in get_file_list(options):
 
-        print 'Reading function signatures from: ' + filename
+        filename = filepath.split(os.path.sep)[-1]
 
         # open file and get functions
         with open(filepath) as f:
             funcs = getFuncsList(f) 
             ft.add_file(funcs, filename)
 
-        # print functions
-        for item in funcs:
-            print '    ' + item
+        # print progress information if specified
+        if options['terminalOutput'] is True:
 
-        # message if none found
-        if not len(funcs):
-            print '    ' + 'no function definitions found'
+            print
 
-        print
+            print 'Reading function signatures from: ' + filename
+
+            if not len(funcs):
+                # message if none found
+                print '    ' + 'no function definitions found'
+            else:
+                # print functions
+                for item in funcs:
+                    print '    ' + item
 
 
     # write results to file
@@ -127,6 +69,11 @@ def main():
 
         for func in dup_funcs:
             resFile.write(func + '\t' + str(ft.get_num_duplicated(func)) + '\n')
+            if options['details'] is True:
+                # if enabled, write the filenames that contain this function
+                for filename in ft.get_files(func):
+                    resFile.write('    - ' + filename + '\n')
+                resFile.write('\n')
 
 
 if __name__ == '__main__':
