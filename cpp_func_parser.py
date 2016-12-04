@@ -28,23 +28,28 @@ def main():
 
     options = get_args(sys.argv)
     ft = FunctionTracker()
+
+    # returns a dictionary of keys 'path', 'depth'
+    config = get_config(options)
+    path_length = len(config['path'])
     
     # parse functions from files
-    for filepath in get_file_list(options):
+    for filepath in get_file_list(config['path'], config['depth']):
 
-        filename = filepath.split(os.path.sep)[-1]
+        # file path relative to project path
+        file_relpath = filepath[path_length:]
 
         # open file and get functions
         with open(filepath) as f:
             funcs = getFuncsList(f) 
-            ft.add_file(funcs, filename)
+            ft.add_file(funcs, file_relpath)
 
         # print progress information if specified
         if options['terminalOutput'] is True:
 
             print
 
-            print 'Reading function signatures from: ' + filename
+            print 'Reading function signatures from: ' + file_relpath
 
             if not len(funcs):
                 # message if none found
@@ -59,6 +64,9 @@ def main():
     dup_funcs = ft.get_duplicate_funcs() # sorted by most duplicate first
     
     with open('results.txt', 'w') as resFile:
+        resFile.write('Project path: ' + config['path'] + '\n')
+        resFile.write('Search depth: ' + str(config['depth']) + '\n')
+        resFile.write('\n')
         resFile.write('Total number of files read: ' + str(len(ft.get_files())) + '\n')
         resFile.write('Total number of function definitions found: ' + str(len(ft.get_funcs())) + '\n')
         resFile.write('Number of functions defined multiple times: ' + str(len(dup_funcs)) + '\n')
@@ -71,8 +79,8 @@ def main():
             resFile.write(func + '\t' + str(ft.get_num_duplicated(func)) + '\n')
             if options['details'] is True:
                 # if enabled, write the filenames that contain this function
-                for filename in ft.get_files(func):
-                    resFile.write('    - ' + filename + '\n')
+                for file_relpath in ft.get_files(func):
+                    resFile.write('    - ' + file_relpath + '\n')
                 resFile.write('\n')
 
 

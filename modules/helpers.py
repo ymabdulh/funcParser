@@ -25,9 +25,10 @@ def getFuncsList(file):
             REGEX                       DESCRIPTION                         EXAMPLE
             ------------------------------------------------------------------------
             \s*                         any number of spaces
-            [a-zA-Z0-9_*:]+             return type                         int
+            [a-zA-Z0-9_:]+              return type                         int
+            \*?                         optional (non spaced) pointer          *
             \s+                         one or more spaces
-            [a-zA-Z0-9_*:\s]*           function name                           * hello
+            [a-zA-Z0-9_*:\s]*           function name                            hello
             \(                          opening parenthesis                            (
             (                           start of group
                 [a-zA-Z0-9_,.*\s]           function arguments                          int i
@@ -36,7 +37,7 @@ def getFuncsList(file):
             )*                          one or more of group
             \)(?!\s*;)                  close parenthesis not followed by ;                             )
         '''
-        match = re.match('\\s*[a-zA-Z0-9_*:]+\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)(?!\\s*;)', line)
+        match = re.match('\\s*[a-zA-Z0-9_:]+\\*?\\s+[a-zA-Z0-9_*:\\s]*\\(([a-zA-Z0-9_,.*:\\s](=(?!=))?(-(?=>))?)*\\)(?!\\s*;)', line)
         if match:
             funcs.append(match.group().strip())
 
@@ -44,9 +45,10 @@ def getFuncsList(file):
 
 
 '''
-    function to get the list of file paths to scan through
+    function to parse the config file if one is provided
+    otherwise returns default config settings
 '''
-def get_file_list(options):
+def get_config(options):
     # find path and levels
     if options['configFile'] is True:
         with open('config.txt', 'r') as config_file:
@@ -62,6 +64,17 @@ def get_file_list(options):
         depth = 0
 
     path = os.path.normpath(path)
+
+    return {
+        'path' : path,
+        'depth' : depth
+    }
+
+
+'''
+    function to get the list of file paths to scan through
+'''
+def get_file_list(path, depth):
 
     # get file list
     res = []

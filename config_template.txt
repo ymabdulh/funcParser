@@ -7,4 +7,4 @@ before the first line. Rename to config.txt, and run
 the main script with the argument 'c' from the terminal.
 
 [1st line: absolute path to project folder]
-[2nd line: how many directory levels to traverse while searching]
+[2nd line: how many directory levels (past the absolute path) to traverse while searching]
